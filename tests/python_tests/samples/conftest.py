@@ -8,6 +8,7 @@ import gc
 import requests
 
 from utils.network import retry_request
+from utils.constants import get_ov_cache_dir
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -114,6 +115,10 @@ MODELS = {
         "name": "katuni4ka/tiny-random-llava",
         "convert_args": ["--trust-remote-code", "--task", "image-text-to-text"]
     },
+    "BAAI/bge-small-en-v1.5": {
+        "name": "BAAI/bge-small-en-v1.5",
+        "convert_args": ['--trust-remote-code']
+    }
 }
 
 TEST_FILES = {
@@ -140,7 +145,7 @@ SAMPLES_JS_DIR = os.environ.get("SAMPLES_JS_DIR", os.path.abspath(os.path.join(o
 def setup_and_teardown(request, tmp_path_factory):
     """Fixture to set up and tear down the temporary directories."""
     
-    ov_cache = os.environ.get("OV_CACHE", tmp_path_factory.mktemp("ov_cache"))
+    ov_cache = get_ov_cache_dir(tmp_path_factory.mktemp("ov_cache"))           
     models_dir = os.path.join(ov_cache, "test_models")
     test_data = os.path.join(ov_cache, "test_data")
     
@@ -304,7 +309,7 @@ def generate_image_generation_jsonl(request):
     if not os.path.exists(file_path):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             for entry in json_entries:
                 f.write(json.dumps(entry) + "\n")
         
