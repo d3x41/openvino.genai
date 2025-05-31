@@ -45,6 +45,7 @@ class TestBenchmarkLLM:
         "convert_model, sample_args",
         [
             pytest.param("tiny-random-qwen2", ["-d", "cpu", "-n", "1", "-ic", "10", "--optimum"]),
+            pytest.param("tiny-random-qwen2", ["-d", "cpu", "-n", "1", "-ic", "10", "--optimum", "--num_beams", "2"]),
             pytest.param("tiny-random-qwen2", ["-d", "cpu", "-n", "1", "-ic", "20", "--max_ngram_size", "3", "--num_assistant_tokens", "5", "-p", "'Why is the Sun yellow?'"]),
             pytest.param("tiny-random-llava", [ "-ic", "4", "-pf", os.path.join(SAMPLES_PY_DIR, "llm_bench/prompts/llava-1.5-7b.jsonl")]),
             pytest.param("tiny-random-llava", [ "-ic", "4", "--optimum", "-pf", os.path.join(SAMPLES_PY_DIR, "llm_bench/prompts/llava-1.5-7b.jsonl")]),
@@ -122,7 +123,7 @@ class TestBenchmarkLLM:
         
         
     @pytest.mark.samples
-    @pytest.mark.parametrize("sample_args", [["-d", "cpu", "-n", "1", "--num_steps", "4"]])
+    @pytest.mark.parametrize("sample_args", [["-d", "cpu", "-n", "1", "--num_steps", "4"], ["-d", "cpu", "-n", "1", "--num_steps", "4", "--empty_lora"]])
     @pytest.mark.parametrize("convert_model", ["tiny-random-latent-consistency"], indirect=True)
     @pytest.mark.parametrize("download_model", ["tiny-random-latent-consistency-lora"], indirect=True)
     @pytest.mark.parametrize("generate_image_generation_jsonl", [("image_generation.jsonl", image_generation_json)], indirect=True)
@@ -198,5 +199,22 @@ class TestBenchmarkLLM:
             benchmark_script, 
             "-m", convert_model, 
             "--media", media_path,
+        ] + sample_args
+        run_sample(benchmark_py_command)
+
+    @pytest.mark.samples
+    @pytest.mark.parametrize("convert_model", ["BAAI/bge-small-en-v1.5"], indirect=True)
+    @pytest.mark.parametrize("sample_args", [
+        ["-d", "cpu", "-n", "2"], 
+        ["-d", "cpu", "-n", "2", "--embedding_max_length", "128", "--embedding_normalize", "--embedding_pooling", "mean"], 
+        ["-d", "cpu", "-n", "2", "--optimum"], 
+        ["-d", "cpu", "-n", "1", "--embedding_max_length", "128", "--embedding_normalize", "--embedding_pooling", "mean", "--optimum"]
+    ])
+    def test_python_tool_llm_benchmark_text_embeddings(self, convert_model, sample_args):
+        benchmark_script = os.path.join(SAMPLES_PY_DIR, 'llm_bench/benchmark.py')
+        benchmark_py_command = [
+            sys.executable, 
+            benchmark_script, 
+            "-m", convert_model, 
         ] + sample_args
         run_sample(benchmark_py_command)
